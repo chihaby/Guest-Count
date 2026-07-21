@@ -1,0 +1,21 @@
+.card {
+    width: 320px;
+    margin: 0 auto;
+    padding: 30px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    text-align: center;
+}
+
+.card h2 {
+    margin-bottom: 20px;
+    color: #555;
+    font-size: 24px;
+}
+
+.count {
+    font-size: 90px;
+    font-weight: bold;
+    color: #0d6efd;
+}
