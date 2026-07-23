@@ -3,7 +3,7 @@ import styles from "../styles/button.module.css";
 interface ButtonProps {
   children: React.ReactNode;
   onClick: () => void;
-  variant?: "primary" | "danger";
+  variant?: "primary" | "danger" | "convene_primary" | "convene_secondary";
 }
 
 export default function Button({

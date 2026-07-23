@@ -4,6 +4,7 @@ import { useState } from "react";
 import CounterCard from "./counterCard";
 import Button from "./button";
 import styles from "../styles/guestCounter.module.css";
+import LocalTime from "./localTime";
 
 export default function GuestCounter() {
   const [eventName, setEventName] = useState<string>("");
@@ -30,20 +31,21 @@ export default function GuestCounter() {
 
       <div className={styles.buttons}>
         <Button
-          variant="danger"
+          variant="convene_secondary"
           onClick={() => count > 0 && setCount(count - 1)}
         >
           −
         </Button>
 
         <Button
-          variant="primary"
+          variant="convene_primary"
           onClick={() => setCount(count + 1)}
         >
           +
         </Button>
       </div>
       <div>
+        <LocalTime />
         <h1 className={styles.branding} style={{}}>Convene Hospitality Group</h1>
       </div>
     </div>
