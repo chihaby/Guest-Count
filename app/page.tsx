@@ -1,6 +1,7 @@
 import GuestCounter from "@/components/guestCounter";
 import { createClient } from '@/utils/supabase/server'
 import { cookies } from 'next/headers'
+import AuthGuard from "@/components/authGuard";
 
 export default async function Home() {
   const cookieStore = await cookies()
@@ -17,12 +18,14 @@ export default async function Home() {
         background: "#f5f7fa",
       }}
     >
-      <GuestCounter />
+      <AuthGuard>
+        <GuestCounter />
           <ul>
-      {todos?.map((todo) => (
-        <li key={todo.id}>{todo.name}</li>
-      ))}
-    </ul>
+            {todos?.map((todo) => (
+              <li key={todo.id}>{todo.name}</li>
+            ))}
+          </ul>
+      </AuthGuard>
     </main>
   );
 }

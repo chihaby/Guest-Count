@@ -6,6 +6,7 @@ import Button from "./button";
 import LocalTime from "./localTime";
 import styles from "../styles/guestCounter.module.css";
 import { supabase } from "@/lib/supabase";
+import LogoutButton from "./logoutButton";
 
 interface Event {
   id: string;
@@ -159,16 +160,18 @@ async function createNewEvent() {
   setCount(0);
 }
 
+
   return (
     <div className={styles.container}>
         <div>
-        <button
-          className={styles.newEventButton}
-          onClick={createNewEvent}
-        >
-          <span>&#43; </span>New Event
-        </button>
-      </div>
+            <button
+            className={styles.newEventButton}
+            onClick={createNewEvent}
+            >
+            <span>&#43;  </span>New Event
+            </button>
+            <LogoutButton />
+        </div>
       <input
         type="text"
         className={styles.eventInput}
@@ -201,7 +204,6 @@ async function createNewEvent() {
           +
         </Button>
       </div>
-
       <div>
         <LocalTime />
         <h1 className={styles.branding}>
