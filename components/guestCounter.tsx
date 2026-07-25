@@ -119,9 +119,6 @@ async function createNewEvent() {
     console.log("No active event");
     return;
   }
-
-  console.log("Current event:", event);
-
   const confirmed = window.confirm(
     "Start a new event? The current event will be archived."
   );
@@ -168,7 +165,9 @@ async function createNewEvent() {
             className={styles.newEventButton}
             onClick={createNewEvent}
             >
-            <span>&#43;  </span>New Event
+            <span>
+              New Event
+            </span>
             </button>
             <LogoutButton />
         </div>

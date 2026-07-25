@@ -13,10 +13,14 @@ export default function LogoutButton() {
   }
 
   return (
-    <button
-    className={styles.logoutButton} 
-    onClick={logout} >
-      Logout
-    </button>
+    <>
+
+      <button
+        className={styles.logoutButton} 
+        onClick={logout} >
+        Logout
+      </button>
+      
+    </>
   );
 }

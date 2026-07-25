@@ -23,7 +23,7 @@
 .counter {
     font-size: clamp(5rem, 15vw, 7.5rem);
     font-weight: bold;
-    color: #0d6efd;
+    /* color: #0d6efd; */
     line-height: 1;
 }
 
@@ -48,19 +48,15 @@
 }
 
 .newEventButton {
-    width: 70%;
-    padding:7px;
-    margin-right: 2px;
-    float: left;
-    left: 0;
-    margin-left: -20%;
+    width: 200px;
+    padding:10px;
+    /* margin-left: -20%; */
     border: none;
     border-radius: 12px;
     cursor: pointer;
     font-size: 22px;
     font-weight: 600;
     color: #222;
-    /* background-color: #0d6efd; */
     background-color: #e0dada;
     transition: .2s;
 }
