@@ -48,9 +48,8 @@
 }
 
 .newEventButton {
-    width: 200px;
+    width: 170px;
     padding:10px;
-    /* margin-left: -20%; */
     border: none;
     border-radius: 12px;
     cursor: pointer;

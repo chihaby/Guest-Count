@@ -11,7 +11,7 @@ export default async function Home() {
   return (
     <main
       style={{
-        minHeight: "100vh",
+        minHeight: "90vh",
         display: "flex",
         justifyContent: "center",
         alignItems: "center",

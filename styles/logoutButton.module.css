@@ -1,5 +1,5 @@
 .logoutButton {
-    width: 150px;
+    width: 100px;
     padding:10px;
     margin-left: 15px;
     margin-bottom: 20px;
@@ -8,7 +8,9 @@
     cursor: pointer;
     font-size: 22px;
     font-weight: 600;
-    color: white;
-    background-color: #222;
+    /* color: white; */
+    color: #222;
+    /* background-color: #222; */
+    background-color: #e0dada;
     transition: .2s;
 }
