@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CounterCard from "./counterCard";
 import Button from "./button";
 import LocalTime from "./localTime";
+import LogoutButton from "./logoutButton";
 import styles from "../styles/guestCounter.module.css";
 import { supabase } from "@/lib/supabase";
-import LogoutButton from "./logoutButton";
 
 interface Event {
   id: string;
@@ -20,26 +20,49 @@ export default function GuestCounter() {
   const [eventName, setEventName] = useState("");
   const [count, setCount] = useState(0);
 
-  useEffect(() => {
-    async function loadEvent() {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("active", true)
-        .single();
+  const loadActiveEvent = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .eq("active", true)
+      .single();
 
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      setEvent(data);
-      setEventName(data.event_name);
-      setCount(data.guest_count);
+    if (error) {
+      console.error("Error loading active event:", error);
+      return;
     }
 
-    loadEvent();
+    setEvent(data);
+    setEventName(data.event_name);
+    setCount(data.guest_count);
   }, []);
+
+  useEffect(() => {
+    loadActiveEvent();
+
+    const channel = supabase
+      .channel("events-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "events",
+        },
+        async (payload) => {
+          console.log("Realtime event:", payload);
+
+          await loadActiveEvent();
+        }
+      )
+      .subscribe((status) => {
+        console.log("Realtime status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadActiveEvent]);
 
   async function updateEventName(value: string) {
     setEventName(value);
@@ -55,122 +78,86 @@ export default function GuestCounter() {
 
     if (error) {
       console.error(error);
-      return;
     }
-
-    setEvent({
-      ...event,
-      event_name: value,
-    });
   }
 
   async function increment() {
     if (!event) return;
 
-    const newCount = count + 1;
-
     const { error } = await supabase
       .from("events")
       .update({
-        guest_count: newCount,
+        guest_count: count + 1,
       })
       .eq("id", event.id);
 
     if (error) {
       console.error(error);
-      return;
     }
-
-    setCount(newCount);
-
-    setEvent({
-      ...event,
-      guest_count: newCount,
-    });
   }
 
   async function decrement() {
     if (!event || count === 0) return;
 
-    const newCount = count - 1;
-
     const { error } = await supabase
       .from("events")
       .update({
-        guest_count: newCount,
+        guest_count: count - 1,
       })
       .eq("id", event.id);
 
     if (error) {
       console.error(error);
+    }
+  }
+
+  async function createNewEvent() {
+    if (!event) return;
+
+    const confirmed = window.confirm(
+      "Start a new event? The current event will be archived."
+    );
+
+    if (!confirmed) return;
+
+    const { error: deactivateError } = await supabase
+      .from("events")
+      .update({
+        active: false,
+      })
+      .eq("id", event.id);
+
+    if (deactivateError) {
+      console.error(deactivateError);
       return;
     }
 
-    setCount(newCount);
+    const { error: insertError } = await supabase
+      .from("events")
+      .insert({
+        event_name: "",
+        guest_count: 0,
+        active: true,
+      });
 
-    setEvent({
-      ...event,
-      guest_count: newCount,
-    });
+    if (insertError) {
+      console.error(insertError);
+    }
   }
-
-async function createNewEvent() {
-  if (!event) {
-    console.log("No active event");
-    return;
-  }
-  const confirmed = window.confirm(
-    "Start a new event? The current event will be archived."
-  );
-
-  if (!confirmed) return;
-
-  const { error: deactivateError } = await supabase
-    .from("events")
-    .update({
-      active: false,
-    //   ended_at: new Date().toISOString(),
-    })
-    .eq("id", event.id);
-
-  console.log("Deactivate error:", deactivateError);
-
-  if (deactivateError) return;
-
-  const { data: newEvent, error: insertError } = await supabase
-    .from("events")
-    .insert({
-      event_name: "",
-      guest_count: 0,
-      active: true,
-    })
-    .select()
-    .single();
-
-  console.log("New Event:", newEvent);
-  console.log("Insert Error:", insertError);
-
-  if (insertError) return;
-
-  setEvent(newEvent);
-  setEventName("");
-  setCount(0);
-}
-
 
   return (
     <div className={styles.container}>
-        <div>
-            <button
-            className={styles.newEventButton}
-            onClick={createNewEvent}
-            >
-            <span>
-              New Event
-            </span>
-            </button>
-            <LogoutButton />
-        </div>
+      <div className={styles.topBar}>
+        <button
+          className={styles.newEventButton}
+          onClick={createNewEvent}
+        >
+          New Event
+        </button>
+
+        <LogoutButton />
+      </div>
+
       <input
         type="text"
         className={styles.eventInput}
@@ -203,8 +190,10 @@ async function createNewEvent() {
           +
         </Button>
       </div>
-      <div>
+
+      <div className={styles.footer}>
         <LocalTime />
+
         <h1 className={styles.branding}>
           Convene Hospitality Group
         </h1>
