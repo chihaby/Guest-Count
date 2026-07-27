@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import CounterCard from "./counterCard";
 import Button from "./button";
 import LocalTime from "./localTime";
@@ -17,29 +17,27 @@ interface Event {
 
 export default function GuestCounter() {
   const [event, setEvent] = useState<Event | null>(null);
-  const [eventName, setEventName] = useState("");
-  const [count, setCount] = useState(0);
 
-  const loadActiveEvent = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .eq("active", true)
-      .single();
+  // Load the current active event
+  useEffect(() => {
+    async function loadEvent() {
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .eq("active", true)
+        .single();
 
-    if (error) {
-      console.error("Error loading active event:", error);
-      return;
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setEvent(data);
     }
 
-    setEvent(data);
-    setEventName(data.event_name);
-    setCount(data.guest_count);
-  }, []);
+    loadEvent();
 
-  useEffect(() => {
-    loadActiveEvent();
-
+    // Realtime subscription
     const channel = supabase
       .channel("events-realtime")
       .on(
@@ -50,24 +48,52 @@ export default function GuestCounter() {
           table: "events",
         },
         async (payload) => {
-          console.log("Realtime event:", payload);
+          console.log("Realtime:", payload);
 
-          await loadActiveEvent();
+          const updated = payload.new as Event;
+
+          if (payload.eventType === "INSERT") {
+            if (updated.active) {
+              setEvent(updated);
+            }
+            return;
+          }
+
+          if (payload.eventType === "UPDATE") {
+            if (updated.active) {
+              setEvent(updated);
+            } else {
+              // Active event was archived.
+              const { data } = await supabase
+                .from("events")
+                .select("*")
+                .eq("active", true)
+                .single();
+
+              if (data) {
+                setEvent(data);
+              }
+            }
+          }
         }
       )
       .subscribe((status) => {
-        console.log("Realtime status:", status);
+        console.log("Realtime Status:", status);
       });
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [loadActiveEvent]);
+  }, []);
 
   async function updateEventName(value: string) {
-    setEventName(value);
-
     if (!event) return;
+
+    // Optimistic update
+    setEvent({
+      ...event,
+      event_name: value,
+    });
 
     const { error } = await supabase
       .from("events")
@@ -84,30 +110,51 @@ export default function GuestCounter() {
   async function increment() {
     if (!event) return;
 
+    const updatedEvent = {
+      ...event,
+      guest_count: event.guest_count + 1,
+    };
+
+    // Instant UI update
+    setEvent(updatedEvent);
+
     const { error } = await supabase
       .from("events")
       .update({
-        guest_count: count + 1,
+        guest_count: updatedEvent.guest_count,
       })
       .eq("id", event.id);
 
     if (error) {
       console.error(error);
+
+      // Roll back on failure
+      setEvent(event);
     }
   }
 
   async function decrement() {
-    if (!event || count === 0) return;
+    if (!event) return;
+    if (event.guest_count === 0) return;
+
+    const updatedEvent = {
+      ...event,
+      guest_count: event.guest_count - 1,
+    };
+
+    setEvent(updatedEvent);
 
     const { error } = await supabase
       .from("events")
       .update({
-        guest_count: count - 1,
+        guest_count: updatedEvent.guest_count,
       })
       .eq("id", event.id);
 
     if (error) {
       console.error(error);
+
+      setEvent(event);
     }
   }
 
@@ -143,6 +190,8 @@ export default function GuestCounter() {
     if (insertError) {
       console.error(insertError);
     }
+
+    // Realtime will automatically load the new event.
   }
 
   return (
@@ -162,17 +211,17 @@ export default function GuestCounter() {
         type="text"
         className={styles.eventInput}
         placeholder="Enter Event Name"
-        value={eventName}
+        value={event?.event_name ?? ""}
         onChange={(e) => updateEventName(e.target.value)}
       />
 
       <h1 className={styles.eventTitle}>
-        {eventName || "Untitled Event"}
+        {event?.event_name || "Untitled Event"}
       </h1>
 
       <CounterCard
         title="Current Guests"
-        count={count}
+        count={event?.guest_count ?? 0}
       />
 
       <div className={styles.buttons}>
